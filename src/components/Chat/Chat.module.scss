@@ -1,0 +1,10 @@
+.container {
+    display: flex;
+    .messages {
+        width: calc(100% - 300px);
+        display: flex;
+        flex-flow: column;
+        justify-content: space-between;
+        height: 100vh;
+    }
+}

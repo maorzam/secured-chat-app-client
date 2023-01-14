@@ -1,27 +1,14 @@
-import React, {useState, useEffect} from 'react'
-import io from 'socket.io-client';
+import React, {useState} from 'react'
 import Login from './components/Login'
 import './App.css';
+import Chat from './components/Chat/Chat';
 
 function App() {
   const [socket, setSocket] = useState(null);
 
-  useEffect(() => {
-    const newSocket = io(`http://${window.location.hostname}:5000`, {
-      auth: {
-        username: 'bar',
-        password: 'bar',
-        email: 'bar'
-      }
-    });
-    setSocket(newSocket);
-    return () => newSocket.close();
-  }, [setSocket]);
-
   return (
     <div className="App">
-      <header>Chat App</header>
-      {socket && <Login socket={socket} />}
+      {!socket ? <Login setSocket={setSocket} /> : <Chat socket={socket}/>}
     </div>
   );
 }
