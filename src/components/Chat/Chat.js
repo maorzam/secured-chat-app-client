@@ -1,36 +1,79 @@
-import React, {useState} from "react";
-import MessagesBox from "./components/MessagesBox";
-import NewMessage from "./components/NewMessage/NewMessage";
-import UsersList from "./components/UsersList";
-import styles from './Chat.module.scss'
-const Chat = ({socket}) => {
-    const [selectedUser, setSelectedUser] = useState(null)
-    const [users, setUsers] = useState([])
-    console.log(users)
-    socket.on('users-list', (users) => {
-        setUsers(users)
-    })
 
-    socket.on("user-connected", (user) => {
-        console.log(user)
-        const exist = users.find(u => u.userId === user.userId)
-        if (!exist) {
-            const list = users;
-            list.push(user)
-            setUsers(list)
-        }
-    })
-    return (
-        <div className={styles.container}>
-            <UsersList socket={socket} users={users} setSelectedUser={setSelectedUser}/>
-            {selectedUser && 
-                <div className={styles.messages}>
-                    <MessagesBox socket={socket} selectedUser={selectedUser} />
-                    <NewMessage socket={socket} selectedUser={selectedUser} />
-                </div> 
+import React, { useState, useEffect, useRef } from "react";
+import { encryptData, decryptData } from "./utils.js";
+import { useParams } from "react-router-dom";
+import moment from "moment"
+import styles from './Chat.module.scss'
+
+const Chat = ({ socket }) => {
+    const {username, roomname} = useParams()
+    const [text, setText] = useState("");
+    const [messages, setMessages] = useState([]);
+
+    socket.on("message", (data) => {
+        const decryptedMessage = decryptData(data.text, data.username);
+        let temp = messages;
+        temp.push({
+            timestamp: data.timestamp,
+            userId: data.userId,
+            username: data.username,
+            text: decryptedMessage,
+        });
+        setMessages([...temp]);
+    });
+
+  const sendData = () => {
+    if (text.length > 0) {
+      const encryptedMessage = encryptData(text);
+      socket.emit("chat", encryptedMessage);
+      setText("");
+    }
+  };
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(scrollToBottom, [messages]);
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.username}>
+        <h2>
+          {username} <span style={{ fontSize: "0.7rem" }}>in {roomname}</span>
+        </h2>
+      </div>
+      <div className={styles.messages}>
+        {messages.map((message) => (
+            <div className={`${styles.message} ${message.username === username && styles.right}`}>
+                {(message.text.startsWith('Welcome') || message.text.startsWith(username) || message.text.startsWith(message.username)) ? (
+                    <div className={styles.center}>{message.text}</div>
+                ) : (
+                    <>
+                        <b>{message.username} : </b>
+                        <div>{message.text}</div>
+                        <div className={styles.date}>{moment(message.timestamp).format('LT')}</div>
+                    </>
+                )}
+            </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+      <div className={styles.sendMessage}>
+        <input
+          placeholder="enter your message"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyPress={(e) => {
+            if (e.key === "Enter") {
+              sendData();
             }
-            
-       </div>
-    )
+          }}
+        ></input>
+        <button onClick={sendData}>Send</button>
+      </div>
+    </div>
+  );
 }
-export default Chat
+export default Chat;

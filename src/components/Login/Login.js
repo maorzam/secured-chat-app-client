@@ -1,30 +1,22 @@
 import { useState } from "react"
-import io from 'socket.io-client';
-
+import {Link} from "react-router-dom"
 import styles from './Login.module.scss'
-const Login = ({setSocket}) => {
-    const [username, setUserName] = useState('')
-    const [password, setPassword] = useState('')
+
+const Login = ({socket}) => {
+    const [data, setData] = useState({
+        username: '',
+        password: '',
+        roomname: ''
+    })
 
       const onChangeHandler = (e) => {
-          const {name, value} = e.target;
-          if (name === 'username') {
-              setUserName(value)
-          }
-          if (name === 'password') {
-            setPassword(value)
-        }
+        const {name, value} = e.target;
+        setData(prevState => ({...prevState, [name]: value}))
       }
 
       const onClickHandler = () => {
-        const newSocket = io(`http://${window.location.hostname}:5000`, {
-            auth: {
-                username,
-                password
-            }
-        });
-        setSocket(newSocket);
-        return () => newSocket.close();
+        const {username, password, roomname} = data
+        socket.emit('join', {username, password, roomname})
       }
         
     return (
@@ -33,13 +25,19 @@ const Login = ({setSocket}) => {
                 <h1>Welcome to the chat!</h1>
                 <div className={styles.inputContainer}>
                     <div className={styles.label}>Username</div>
-                    <input name="username" placeholder="username" value={username} onChange={onChangeHandler}/>
+                    <input name="username" placeholder="username" value={data.username} onChange={onChangeHandler}/>
                 </div>
                 <div className={styles.inputContainer}>
                     <div className={styles.label}>Password</div>
-                    <input name="password" type="password" placeholder="password" value={password} onChange={onChangeHandler}/>
+                    <input name="password" type="password" placeholder="password" value={data.password} onChange={onChangeHandler}/>
                 </div>
-                <button onClick={onClickHandler}>Enter</button>
+                <div className={styles.inputContainer}>
+                    <div className={styles.label}>Room Name</div>
+                    <input name="roomname" placeholder="Type roomname" value={data.roomname} onChange={onChangeHandler}/>
+                </div>
+                <Link to={`/chat/${data.roomname}/${data.username}`}>
+                    <button onClick={onClickHandler}>Enter</button>
+                </Link>
             </div>
         </div>
     )
