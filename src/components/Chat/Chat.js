@@ -10,17 +10,19 @@ const Chat = ({ socket }) => {
     const [text, setText] = useState("");
     const [messages, setMessages] = useState([]);
 
-    socket.on("message", (data) => {
-        const decryptedMessage = decryptData(data.text, data.username);
-        let temp = messages;
-        temp.push({
-            timestamp: data.timestamp,
-            userId: data.userId,
-            username: data.username,
-            text: decryptedMessage,
+    useEffect(() => {
+        socket.on("message", (data) => {
+            const decryptedMessage = decryptData(data.text, data.username);
+            let temp = messages;
+            temp.push({
+                timestamp: data.timestamp,
+                userId: data.userId,
+                username: data.username,
+                text: decryptedMessage,
+            });
+            setMessages([...temp]);
         });
-        setMessages([...temp]);
-    });
+    }, [socket, messages])
 
   const sendData = () => {
     if (text.length > 0) {
